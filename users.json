@@ -1,0 +1,14 @@
+{
+  "deepakfrancisa@gmail.com": {
+    "name": "Deepak",
+    "designation": "Student",
+    "college": "PSG",
+    "password_hash": "scrypt:32768:8:1$5qCUTXjFAiGKvdPb$4db0fabb8c52a2837259db399cfa09f0995f3e6847f7fd144c0926767d3a68d97b90e4de9b71fa658dbb0d44f907878bf5bbc73ad20b8d8397459d25db26c6ff"
+  },
+  "sanjaieswar12@gmail.com": {
+    "name": "Sanjai",
+    "designation": "Student",
+    "college": "PSG",
+    "password_hash": "scrypt:32768:8:1$z5SBhxUF8lsty1l9$e180dc3ac2c2a19efa0a5e86cf448dace5d4d4b807cf2abcaba5f1ebe70749de1557e4fcc048f37973e88eb398dca4d26a31cc9ffe3cc9ef6e74f5265e012692"
+  }
+}

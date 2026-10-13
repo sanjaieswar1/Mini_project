@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Login - Analytics Dashboard{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-center align-items-center login-wrap">
+  <div class="card shadow login-card">
+    <div class="card-body p-4">
+      <h3 class="text-center mb-1"><i class="fa-solid fa-chart-line"></i> Analytics Dashboard</h3>
+      <p class="text-center text-muted mb-4">Sign in to continue</p>
+      <form method="POST">
+        <div class="mb-3">
+          <label class="form-label">Username or Email</label>
+          <input type="text" name="username" class="form-control" required autofocus>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Password</label>
+          <input type="password" name="password" class="form-control" required>
+        </div>
+        <button type="submit" class="btn btn-primary w-100">Login</button>
+      </form>
+      <p class="text-muted small mt-3 mb-0">Demo admin credentials: <code>admin</code> / <code>admin123</code></p>
+      <p class="text-muted small mt-2 mb-0 text-center">
+        New user? <a href="{{ url_for('register') }}">Create an account</a>
+      </p>
+    </div>
+  </div>
+</div>
+{% endblock %}

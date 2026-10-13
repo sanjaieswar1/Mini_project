@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Register - Analytics Dashboard{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-center align-items-center login-wrap">
+  <div class="card shadow login-card">
+    <div class="card-body p-4">
+      <h3 class="text-center mb-1"><i class="fa-solid fa-user-plus"></i> Create Account</h3>
+      <p class="text-center text-muted mb-4">Sign up to access the dashboard</p>
+      <form method="POST">
+        <div class="mb-3">
+          <label class="form-label">Full Name</label>
+          <input type="text" name="name" class="form-control" value="{{ form.get('name', '') }}" required autofocus>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Designation</label>
+          <input type="text" name="designation" class="form-control" placeholder="e.g. Student, Faculty, Analyst" value="{{ form.get('designation', '') }}" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">College</label>
+          <input type="text" name="college" class="form-control" value="{{ form.get('college', '') }}" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Email</label>
+          <input type="email" name="email" class="form-control" value="{{ form.get('email', '') }}" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Password</label>
+          <input type="password" name="password" class="form-control" minlength="6" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Confirm Password</label>
+          <input type="password" name="confirm_password" class="form-control" minlength="6" required>
+        </div>
+        <button type="submit" class="btn btn-primary w-100">Register</button>
+      </form>
+      <p class="text-muted small mt-3 mb-0 text-center">
+        Already have an account? <a href="{{ url_for('login') }}">Log in</a>
+      </p>
+    </div>
+  </div>
+</div>
+{% endblock %}

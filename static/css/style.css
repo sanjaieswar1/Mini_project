@@ -1,0 +1,31 @@
+body {
+  background-color: #f4f6f9;
+}
+
+.login-wrap {
+  min-height: 90vh;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 380px;
+}
+
+.kpi-card {
+  border: none;
+  border-radius: 12px;
+}
+
+.card {
+  border-radius: 12px;
+}
+
+.navbar-brand {
+  font-weight: 600;
+}
+
+.chart-wrap {
+  position: relative;
+  height: 280px;
+  width: 100%;
+}

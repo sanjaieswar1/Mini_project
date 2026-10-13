@@ -1,0 +1,295 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center flex-wrap mb-3">
+  <div>
+    <h4 class="mb-0"><i class="fa-solid fa-gauge"></i> Dashboard</h4>
+    <small class="text-muted">Dataset: {{ filename }} &middot; {{ row_count }} records shown</small>
+  </div>
+  <a href="{{ url_for('download_report') }}{% if filter_qs %}?{{ filter_qs }}{% endif %}"
+     class="btn btn-success">
+    <i class="fa-solid fa-file-arrow-down"></i> Export Report (CSV)
+  </a>
+</div>
+
+<!-- Module 6: Filtering -->
+{% if filter_options %}
+<form method="GET" class="row g-2 align-items-end mb-4">
+  <div class="col-auto">
+    <label class="form-label small mb-0">Filter column</label>
+    <select name="filter_col" class="form-select form-select-sm">
+      <option value="">-- none --</option>
+      {% for col, values in filter_options.items() %}
+        <option value="{{ col }}" {% if col == active_filter_col %}selected{% endif %}>{{ col }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-auto">
+    <label class="form-label small mb-0">Value</label>
+    <input type="text" name="filter_val" class="form-control form-control-sm" list="filterValList"
+           value="{{ active_filter_val or '' }}" placeholder="type a value">
+    <datalist id="filterValList">
+      {% for col, values in filter_options.items() %}
+        {% for v in values %}<option value="{{ v }}">{% endfor %}
+      {% endfor %}
+    </datalist>
+  </div>
+  <div class="col-auto">
+    <button class="btn btn-sm btn-primary">Apply Filter</button>
+    <a href="{{ url_for('dashboard') }}" class="btn btn-sm btn-outline-secondary">Clear</a>
+  </div>
+</form>
+{% endif %}
+
+<!-- Module 6: KPI Cards -->
+<div class="row g-3 mb-4">
+  <div class="col-md-3 col-sm-6">
+    <div class="card kpi-card text-white bg-primary">
+      <div class="card-body">
+        <div class="small">Total Records</div>
+        <div class="fs-3 fw-bold">{{ kpis.total_records }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3 col-sm-6">
+    <div class="card kpi-card text-white bg-secondary">
+      <div class="card-body">
+        <div class="small">Total Columns</div>
+        <div class="fs-3 fw-bold">{{ kpis.total_columns }}</div>
+      </div>
+    </div>
+  </div>
+  {% for key, value in kpis.items() %}
+    {% if key.endswith('_total') %}
+    <div class="col-md-3 col-sm-6">
+      <div class="card kpi-card text-white bg-success">
+        <div class="card-body">
+          <div class="small">{{ key[:-6] }} (Total)</div>
+          <div class="fs-3 fw-bold">{{ "{:,.2f}".format(value) }}</div>
+        </div>
+      </div>
+    </div>
+    {% elif key.endswith('_avg') %}
+    <div class="col-md-3 col-sm-6">
+      <div class="card kpi-card text-white bg-info">
+        <div class="card-body">
+          <div class="small">{{ key[:-4] }} (Average)</div>
+          <div class="fs-3 fw-bold">{{ "{:,.2f}".format(value) }}</div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  {% endfor %}
+</div>
+
+<!-- Module 5: Visualizations -->
+<div class="row g-3">
+  <div class="col-md-6">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h6>Bar Chart <small class="text-muted">(measure by category)</small></h6>
+        <div class="small text-primary mb-1" id="barCaption">&nbsp;</div>
+        <div class="chart-wrap"><canvas id="barChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h6>Pie Chart <small class="text-muted">(category distribution)</small></h6>
+        <div class="small text-primary mb-1" id="pieCaption">&nbsp;</div>
+        <div class="chart-wrap"><canvas id="pieChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h6>Line Chart <small class="text-muted">(trend)</small></h6>
+        <div class="small text-primary mb-1" id="lineCaption">&nbsp;</div>
+        <div class="chart-wrap"><canvas id="lineChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h6>Scatter Plot <small class="text-muted">(numeric vs numeric)</small></h6>
+        <div class="small text-primary mb-1" id="scatterCaption">&nbsp;</div>
+        <div class="chart-wrap"><canvas id="scatterChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-12">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h6>Histogram <small class="text-muted">(distribution of a numeric column)</small></h6>
+        <div class="small text-primary mb-1" id="histCaption">&nbsp;</div>
+        <div class="chart-wrap" style="height:260px;"><canvas id="histChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Module 4: Statistical Summary Table (identifier columns like Row ID / Postal Code excluded) -->
+{% if stats %}
+<div class="card shadow-sm mt-4 mb-4">
+  <div class="card-body">
+    <h6>Statistical Summary</h6>
+    <div class="table-responsive">
+      <table class="table table-sm table-striped table-bordered">
+        <thead>
+          <tr>
+            <th>Metric</th>
+            {% for col in stats.keys() %}<th>{{ col }}</th>{% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for metric in ['count','mean','std','min','25%','50%','75%','max'] %}
+          <tr>
+            <td class="fw-bold">{{ metric }}</td>
+            {% for col in stats.keys() %}<td>{{ stats[col][metric] }}</td>{% endfor %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const filterQS = {{ filter_qs | tojson }};
+
+  function withFilter(url) {
+    if (!filterQS) return url;
+    return url + (url.includes('?') ? '&' : '?') + filterQS;
+  }
+
+  async function fetchJSON(url) {
+    const res = await fetch(withFilter(url));
+    const text = await res.text();
+    try {
+      return JSON.parse(text);
+    } catch (e) {
+      return { error: `Server returned a non-JSON response (status ${res.status}). Check the Flask console for a traceback.` };
+    }
+  }
+
+  function setCaption(id, text) {
+    const el = document.getElementById(id);
+    if (el && text) el.textContent = 'Fields used: ' + text;
+  }
+
+  function requireData(arr, what) {
+    if (!arr || arr.length === 0) throw new Error('No data to show for ' + what);
+  }
+
+  function showError(canvasId, message) {
+    const canvas = document.getElementById(canvasId);
+    if (canvas) {
+      canvas.replaceWith(
+        Object.assign(document.createElement('p'), { className: 'text-danger small', innerText: message })
+      );
+    }
+  }
+
+  const palette = ['#4e79a7','#f28e2b','#e15759','#76b7b2','#59a14f','#edc948','#b07aa1','#ff9da7'];
+
+  (async function initCharts() {
+    if (typeof Chart === 'undefined') {
+      document.querySelectorAll('.chart-wrap').forEach(el => {
+        el.innerHTML = '<p class="text-danger small">Chart.js library failed to load. Check that /static/js/chart.umd.min.js exists.</p>';
+      });
+      console.error('Chart.js is not loaded — check static/js/chart.umd.min.js is being served correctly.');
+      return;
+    }
+
+    // Bar chart
+    try {
+      const bar = await fetchJSON('/api/chart/bar');
+      if (bar.error) throw new Error(bar.error);
+      requireData(bar.labels, 'the bar chart');
+      setCaption('barCaption', bar.caption);
+      new Chart(document.getElementById('barChart'), {
+        type: 'bar',
+        data: { labels: bar.labels, datasets: [{ label: bar.y_col, data: bar.values, backgroundColor: '#4e79a7' }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+          scales: { x: { title: { display: true, text: bar.x_col } }, y: { beginAtZero: true, title: { display: true, text: bar.y_col } } } }
+      });
+    } catch (e) {
+      console.error('Bar chart failed:', e);
+      showError('barChart', e.message);
+    }
+
+    // Pie chart
+    try {
+      const pie = await fetchJSON('/api/chart/pie');
+      if (pie.error) throw new Error(pie.error);
+      requireData(pie.labels, 'the pie chart');
+      setCaption('pieCaption', pie.caption);
+      new Chart(document.getElementById('pieChart'), {
+        type: 'pie',
+        data: { labels: pie.labels, datasets: [{ data: pie.values, backgroundColor: palette }] },
+        options: { responsive: true, maintainAspectRatio: false }
+      });
+    } catch (e) {
+      console.error('Pie chart failed:', e);
+      showError('pieChart', e.message);
+    }
+
+    // Line chart
+    try {
+      const line = await fetchJSON('/api/chart/line');
+      if (line.error) throw new Error(line.error);
+      requireData(line.labels, 'the line chart');
+      setCaption('lineCaption', line.caption);
+      new Chart(document.getElementById('lineChart'), {
+        type: 'line',
+        data: { labels: line.labels, datasets: [{ label: line.y_col, data: line.values, borderColor: '#e15759', tension: 0.3, spanGaps: true }] },
+        options: { responsive: true, maintainAspectRatio: false,
+          scales: { x: { title: { display: true, text: line.x_col } }, y: { title: { display: true, text: line.y_col } } } }
+      });
+    } catch (e) {
+      console.error('Line chart failed:', e);
+      showError('lineChart', e.message);
+    }
+
+    // Scatter chart
+    try {
+      const scatter = await fetchJSON('/api/chart/scatter');
+      if (scatter.error) throw new Error(scatter.error);
+      requireData(scatter.points, 'the scatter plot');
+      setCaption('scatterCaption', scatter.caption);
+      new Chart(document.getElementById('scatterChart'), {
+        type: 'scatter',
+        data: { datasets: [{ label: `${scatter.x_col} vs ${scatter.y_col}`, data: scatter.points, backgroundColor: '#59a14f' }] },
+        options: { responsive: true, maintainAspectRatio: false, scales: { x: { title: { display: true, text: scatter.x_col } }, y: { title: { display: true, text: scatter.y_col } } } }
+      });
+    } catch (e) {
+      console.error('Scatter chart failed:', e);
+      showError('scatterChart', e.message);
+    }
+
+    // Histogram
+    try {
+      const hist = await fetchJSON('/api/chart/histogram');
+      if (hist.error) throw new Error(hist.error);
+      requireData(hist.labels, 'the histogram');
+      setCaption('histCaption', hist.caption);
+      new Chart(document.getElementById('histChart'), {
+        type: 'bar',
+        data: { labels: hist.labels, datasets: [{ label: hist.col, data: hist.values, backgroundColor: '#edc948' }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+      });
+    } catch (e) {
+      console.error('Histogram failed:', e);
+      showError('histChart', e.message);
+    }
+  })();
+</script>
+{% endblock %}
